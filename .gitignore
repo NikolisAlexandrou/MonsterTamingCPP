@@ -1,0 +1,28 @@
+# Build directories (at any level)
+build/
+out/
+cmake-build-*/
+
+# Visual Studio local settings
+.vs/
+*.user
+*.suo
+
+# Personal CMake presets
+CMakeUserPresets.json
+
+# Compiled files
+*.obj
+*.o
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.lib
+*.a
+*.so
+*.dylib
+
+# Operating system files
+.DS_Store
+Thumbs.db
