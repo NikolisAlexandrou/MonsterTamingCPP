@@ -2,46 +2,59 @@
 //
 #include <iostream>
 #include "Monster.h"
+#include "Move.h"
 #include <memory>
 #include <vector>
 #include <ctime>
+#include <MonsterParty.h>
+#include <cstdlib>
 
 //using namespace std;
 const Move& ChooseMove(Monster& monster, bool isPlayer);
 
-std::vector<Monster> party;
-
 int main()
 {
-	// add monsters to party
-	party.emplace_back("Leafon", 100, 20, ElementType::Leaf);
-	party[0].AddMove(Move("Scratch", 10, ElementType::Normal));
-	party[0].AddMove(Move("Leaf Blade", 30, ElementType::Leaf));
-	party[0].AddMove(Move("Grass Attack", 15, ElementType::Leaf));
+	// Initialise the Random number generator
+	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-	party.emplace_back("Pyrock", 50, 50, ElementType::Earth);
-	party[1].AddMove(Move("Earthquake", 40, ElementType::Earth));
-	party[1].AddMove(Move("Rock Throw", 20, ElementType::Earth));
+	Party party;
+
+	// add monsters to party
+	Monster leafon("Leafon", 100, 20, ElementType::Leaf);
+
+	leafon.AddMove(Move("Leaf Slash", 15, ElementType::Leaf));
+
+	Monster floxy("Floxy", 90, 18, ElementType::Water);
+
+	floxy.AddMove(Move("Water Jet", 15, ElementType::Water));
+
+	Monster pyron("Pyron", 110, 24, ElementType::Fire);
+
+	pyron.AddMove(Move("Flame Burst", 20, ElementType::Fire));
+
+	party.AddMonster(std::move(leafon));
+	party.AddMonster(std::move(floxy));
+	party.AddMonster(std::move(pyron));
+
+	party.SwitchTo(1);
+
+	std::cout << "\nActive Monster: " << party.GetActiveMonster().GetName() << '\n';
 
 	std::cout << "Your party consists of the following monsters:\n" << std::endl;
-	int index = 1;
-	for (const Monster& monster : party) {
-		std::cout << index++ << ". ";
-		monster.PrintStats();
-	}
+	party.PrintParty();
 	std::cout << "\n" << std::endl;
 
-	auto floxy = std::make_unique<Monster>("Floxy", 80, 25, ElementType::Fire);
-	floxy.get()->AddMove(Move("Fire Blast", 35, ElementType::Fire));
+	auto wildMonster = std::make_unique<Monster>("Floxy", 80, 25, ElementType::Fire);
+	wildMonster->AddMove(Move("Fire Blast", 35, ElementType::Fire));
 
 	Monster* player = nullptr;
 	Monster* enemy = nullptr;
 
 	// Set pointers to attacker and defender
-	player = &party[0];
-	enemy = floxy.get();
+	player = &party.GetActiveMonster();
+	enemy = wildMonster.get();
 
-	std::cout << "You are being challenged by a wild " << floxy->GetName() << "!\n" << std::endl;
+	std::cout << "You are being challenged by a wild " << wildMonster->GetName() << "!\n" << std::endl;
 
 	// Handle main game loop
 	while ((player != nullptr && player->IsAlive()) && (enemy != nullptr && enemy->IsAlive())) {
@@ -79,19 +92,18 @@ int main()
 			int choice;
 
 			std::cout << "Choose a monster from your party:\n";
-			for (size_t i = 0; i < party.size(); ++i) {
-				std::cout << i + 1 << ". " << party[i].GetName() << std::endl;
-			}
+			party.PrintParty();
 
 			std::cin >> choice;
 
-			while (choice < 1 || choice > static_cast<int>(party.size())) {
+			while (choice < 1 || choice > static_cast<int>(party.GetSize())) {
 				std::cout << "Invalid choice. Please select a valid monster.\n" << std::endl;
 				std::cin >> choice;
 			}
 
-			if (choice >= 1 && choice <= static_cast<int>(party.size())) {
-				player = &party[choice - 1];
+			if (choice >= 1 && choice <= static_cast<int>(party.GetSize())) {
+				party.SwitchTo(choice - 1);
+				player = &party.GetActiveMonster();
 			}
 		}
 		if (enemy->IsAlive()) {
@@ -117,7 +129,7 @@ const Move& ChooseMove(Monster& monster, bool isPlayer) {
 		std::cout << "Choose a move to use:\n";
 		for (int i = 0; i < monster.GetMoves().size(); i++) {
 			const Move& move = monster.GetMoves()[i];
-			std::cout <<  (i + 1) +". " << move.GetName() << " (Power: " << move.GetPower() << ")\n";
+			std::cout <<  (i + 1) << ". " << move.GetName() << " (Power: " << move.GetPower() << ")\n";
 		}
 		int choice;
 		std::cin >> choice;
@@ -130,7 +142,6 @@ const Move& ChooseMove(Monster& monster, bool isPlayer) {
 		return monster.GetMoves()[choice - 1];
 	}
 	else {
-		srand(time(0));
 		int randNum = rand() % monster.GetMoves().size();
 		return monster.GetMoves()[randNum];
 	}
